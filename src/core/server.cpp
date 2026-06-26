@@ -1,22 +1,37 @@
 #include "server.h"
+#include <sys/socket.h> // Required for accept()
+#include <arpa/inet.h>  // Required for inet_ntoa()
 
 using namespace std;
-
-#define BACKLOG 10 // How many pending incoming connections the OS should queue up
-
-Server::Server(char* port) {
-    // 1. Create and bind the socket
+#define BACKLOG 10
+// 1. Initialize the pool with 4 threads
+Server::Server(char* port) : pool(4) { 
     server_sockfd = create_bind_socket(port);
-    
-    // 2. Start listening on that socket
     start_listening(server_sockfd, port);
     
-    // 3. Temporarily, we will just create an infinite loop so the program doesn't exit.
-    // In the next step, we will replace this loop with code that actually accepts clients!
-    cout << "Server is running. Press Ctrl+C to stop.\n";
+    cout << "Server is running. Waiting for connections...\n";
     while(true) {
-        sleep(1); 
+        accept_and_handle(server_sockfd);
     }
+}
+
+void Server::accept_and_handle(int sockfd) {
+    struct sockaddr_in client_addr{};
+    socklen_t client_len = sizeof(client_addr);
+    int client_sockfd = accept(sockfd, (struct sockaddr*)&client_addr, &client_len);
+
+    if (client_sockfd < 0) return;
+
+    // 2. Instead of handling it here, submit to the pool!
+    // We capture 'client_sockfd' by value into the lambda
+    pool.submit([this, client_sockfd]() {
+        cout << "Thread " << this_thread::get_id() << " handling request.\n";
+        
+        string response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nHello from Threaded C++ Server!";
+        send(client_sockfd, response.c_str(), response.size(), 0);
+        
+        close(client_sockfd); // Close the socket when done
+    });
 }
 
 Server::~Server() {

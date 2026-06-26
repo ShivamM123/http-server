@@ -7,17 +7,19 @@
 #include <netdb.h>      // For getaddrinfo (translating ports/IPs)
 #include <unistd.h>     // For close() and sleep()
 #include <stdexcept>    // For throwing errors
-
+#include "thread_pool.h"
 class Server {
+
 public:
     Server(char* port);
     ~Server();
 
 private:
     int server_sockfd; // This integer is a "File Descriptor" that represents our network connection
-
+    ThreadPool pool;
     int create_bind_socket(char* port);
     void start_listening(int sockfd, char* port);
+    void accept_and_handle(int sockfd);
 };
 
 #endif // SERVER_H
