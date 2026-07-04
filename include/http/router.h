@@ -1,5 +1,6 @@
 #ifndef ROUTER_H
 #define ROUTER_H
+#include <map>
 
 #include <string>
 #include <map>

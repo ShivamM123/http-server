@@ -1,5 +1,6 @@
 #ifndef HTTP_RESPONSE_H
 #define HTTP_RESPONSE_H
+#include <map>
 
 #include <string>
 #include <map>

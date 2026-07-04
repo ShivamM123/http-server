@@ -20,7 +20,7 @@ void HttpResponse::add_header(const string& key, const string& value) {
 void HttpResponse::set_body(const string& b) {
     body = b;
     // Automatically calculate and inject the Content-Length header
-    add_header("Content-Length", to_string(body.length()));
+    add_header("Content-Length", std::to_string(body.length()));
 }
 
 string HttpResponse::to_string() const {

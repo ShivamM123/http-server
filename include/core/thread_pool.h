@@ -13,7 +13,7 @@
 class ThreadPool {
 private:
     std::vector<std::thread> workerThreads;
-    std::queue<std::functional<void()>> taskQueue;
+    std::queue<std::function<void()>> taskQueue;
     std::mutex qMutex;
     std::condition_variable cv;
     std::atomic<bool> shutdownFlag;
@@ -23,7 +23,7 @@ private:
 public:
     ThreadPool(size_t numberOfThreads);
     ~ThreadPool();
-    void submit(std::functional<void()> task);
+    void submit(std::function<void()> task);
     void shutdown();
     void create_threads(size_t numberOfThreads);
 };

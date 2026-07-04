@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdexcept>
 #include "../include/core/server.h" // Path to your server header
 
 using namespace std;
