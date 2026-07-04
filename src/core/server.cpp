@@ -163,6 +163,14 @@ void Server::handle_client(int client_socket) {
 
 void Server::register_routes() {
     // Registering all endpoints to their specific handlers
+    router.add_route("GET", "/", [](const HttpRequest& req, Database& db) {
+        HttpResponse res;
+        res.set_status(301, "Moved Permanently");
+        res.add_header("Location", "/login");
+        res.set_body("");
+        return res;
+    });
+
     router.add_route("GET", "/register", GetRegisterHandler::handle);
     router.add_route("POST", "/register", PostRegisterHandler::handle);
     
