@@ -1,95 +1,174 @@
 #include "server.h"
-#include <sys/socket.h> // Required for accept()
-#include <arpa/inet.h>  // Required for inet_ntoa()
+#include "../http/http_parser.h"
+#include "../handlers/get_register_handler.h"
+#include "../handlers/post_register_handler.h"
+#include "../handlers/get_login_handler.h"
+#include "../handlers/post_login_handler.h"
+#include "../handlers/get_home_handler.h"
+#include "../handlers/post_logout_handler.h"
+#include "../handlers/post_home_handler.h"
+#include "../handlers/get_download_handler.h"
+#include "../handlers/get_history_handler.h"
+#include <iostream>
+#include <stdexcept>
+#include <cstring>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <sys/select.h>
+#include <csignal>
 
 using namespace std;
+
+#define MAX_BUFFER 65536
 #define BACKLOG 10
-// 1. Initialize the pool with 4 threads
-Server::Server(char* port) : pool(4) { 
-    server_sockfd = create_bind_socket(port);
-    start_listening(server_sockfd, port);
-    
-    cout << "Server is running. Waiting for connections...\n";
-    while(true) {
-        accept_and_handle(server_sockfd);
+
+static Server* serverInstance = nullptr;
+
+void signalHandler(int signum) {
+    cout << "\nInterrupt signal (" << signum << ") received. Shutting down gracefully...\n";
+    if (serverInstance) {
+        serverInstance->stop();
     }
 }
 
-void Server::accept_and_handle(int sockfd) {
-    struct sockaddr_in client_addr{};
-    socklen_t client_len = sizeof(client_addr);
-    int client_sockfd = accept(sockfd, (struct sockaddr*)&client_addr, &client_len);
+Server::Server(const char* port) 
+    : shutServer(false), 
+      pool(4), 
+      connPool(5, "dbname=postgres user=postgres password=postgres host=localhost port=5432"), 
+      db(connPool) 
+{
+    serverInstance = this;
+    setup_signal_handler();
+    register_routes();
 
-    if (client_sockfd < 0) return;
+    server_sockfd = create_bind_socket(port);
+    start_listening(server_sockfd, port);
 
-    // 2. Instead of handling it here, submit to the pool!
-    // We capture 'client_sockfd' by value into the lambda
-    pool.submit([this, client_sockfd]() {
-        cout << "Thread " << this_thread::get_id() << " handling request.\n";
-        
-        string response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nHello from Threaded C++ Server!";
-        send(client_sockfd, response.c_str(), response.size(), 0);
-        
-        close(client_sockfd); // Close the socket when done
-    });
+    while (!shutServer.load()) {
+        int client_socket = accept_connection(server_sockfd);
+        if (client_socket != -1) {
+            pool.submit([this, client_socket]() {
+                this->handle_client(client_socket);
+            });
+        }
+    }
+
+    close(server_sockfd);
+    cout << "Server shutdown complete.\n";
 }
 
 Server::~Server() {
-    // Always clean up the socket when the server shuts down
-    close(server_sockfd);
+    if (!shutServer.load()) stop();
+    close(pipefd[0]);
+    close(pipefd[1]);
+    serverInstance = nullptr;
 }
 
-int Server::create_bind_socket(char* port) {
-    int sockfd{}; 
-    struct addrinfo hints{};
-    struct addrinfo* listOfAddr{};
-    struct addrinfo* p{};
+void Server::stop() {
+    shutServer = true;
+    char msg[] = "Q";
+    if (write(pipefd[1], msg, strlen(msg) + 1) == -1) {
+        perror("Error writing to pipe");
+    }
+}
 
-    // "hints" tells the OS what kind of socket we are looking for
-    hints.ai_family = AF_UNSPEC;            // Don't care if it's IPv4 or IPv6
-    hints.ai_socktype = SOCK_STREAM;        // We want a TCP Stream Socket (reliable, two-way connection)
-    hints.ai_flags = AI_PASSIVE;            // Use my local machine's IP address automatically
+void Server::setup_signal_handler() {
+    if (pipe(pipefd) == -1) {
+        throw runtime_error("Failed to create signal pipe");
+    }
+    signal(SIGINT, signalHandler);
+}
 
-    // getaddrinfo() asks the OS for network interfaces that match our hints and port
-    if ((getaddrinfo(NULL, port, &hints, &listOfAddr)) != 0) {
-        throw runtime_error("Error getting address info\n");
+int Server::create_bind_socket(const char* port) {
+    int sockfd = -1;
+    struct addrinfo hints{}, *listOfAddr{}, *p{};
+
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
+
+    if (getaddrinfo(NULL, port, &hints, &listOfAddr) != 0) {
+        throw runtime_error("Error getting address info");
     }
 
-    // The OS returns a linked list of possible addresses. We loop through them and try to connect.
     for (p = listOfAddr; p != nullptr; p = p->ai_next) {
+        if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) continue;
         
-        // Step A: Ask OS for a socket endpoint
-        if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-            perror("Error creating a socket\n");
-            continue; // If it fails, try the next address in the list
-        }
+        int yes = 1;
+        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 
-        // Step B: Bind that socket to the specific port (e.g., 8080)
-        if (bind(sockfd, p->ai_addr, p->ai_addrlen) < 0) {
-            perror("Error binding socket\n");
-            close(sockfd); // Close the failed socket
-            continue;      // Try the next address
+        if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+            close(sockfd);
+            continue;
         }
-        
-        // If both socket() and bind() succeeded, break out of the loop!
-        break; 
+        break;
     }
 
-    // If 'p' is null, it means we looped through everything and failed to bind
-    if (!p) {
-        freeaddrinfo(listOfAddr);
-        throw runtime_error("Error in binding: Could not bind to any address\n");
-    }
-    
-    // Free the memory used by the linked list
-    freeaddrinfo(listOfAddr); 
+    freeaddrinfo(listOfAddr);
+    if (!p) throw runtime_error("Failed to bind socket");
+
     return sockfd;
 }
 
-void Server::start_listening(int sockfd, char* port) {
-    // listen() tells the OS to start accepting incoming TCP connections and put them in a queue
-    if (listen(sockfd, BACKLOG) < 0) {
-        throw runtime_error("Error in listening\n");
+void Server::start_listening(int sockfd, const char* port) {
+    if (listen(sockfd, BACKLOG) == -1) {
+        throw runtime_error("Listen failed");
     }
-    cout << "The server has started listening on port: " << port << '\n';
+    cout << "Server listening on port " << port << "...\n";
+}
+
+int Server::accept_connection(int sockfd) {
+    fd_set ready_sockets;
+    FD_ZERO(&ready_sockets);
+    FD_SET(sockfd, &ready_sockets);
+    FD_SET(pipefd[0], &ready_sockets);
+
+    int maxFd = max(sockfd, pipefd[0]);
+
+    if (select(maxFd + 1, &ready_sockets, NULL, NULL, NULL) < 0) {
+        if (errno == EINTR) return -1;
+        throw runtime_error("Select error");
+    }
+
+    if (FD_ISSET(sockfd, &ready_sockets)) {
+        struct sockaddr_in client_addr{};
+        socklen_t client_len = sizeof(client_addr);
+        int client_sockfd = accept(sockfd, (struct sockaddr*)&client_addr, &client_len);
+        return client_sockfd;
+    }
+
+    return -1; 
+}
+
+void Server::handle_client(int client_socket) {
+    char buffer[MAX_BUFFER];
+    memset(buffer, 0, MAX_BUFFER);
+
+    int bytes_received = recv(client_socket, buffer, MAX_BUFFER - 1, 0);
+    
+    if (bytes_received > 0) {
+        string raw_request(buffer, bytes_received);
+        HttpRequest req = HttpParser::parse(raw_request);
+        HttpResponse res = router.handle_request(req, db);
+
+        string raw_response = res.to_string();
+        send(client_socket, raw_response.c_str(), raw_response.length(), 0);
+    }
+
+    close(client_socket);
+}
+
+void Server::register_routes() {
+    // Registering all endpoints to their specific handlers
+    router.add_route("GET", "/register", GetRegisterHandler::handle);
+    router.add_route("POST", "/register", PostRegisterHandler::handle);
+    
+    router.add_route("GET", "/login", GetLoginHandler::handle);
+    router.add_route("POST", "/login", PostLoginHandler::handle);
+    
+    router.add_route("GET", "/home", GetHomeHandler::handle);
+    router.add_route("POST", "/logout", PostLogoutHandler::handle);
 }

@@ -5,18 +5,51 @@ project(HttpServer VERSION 1.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
-# set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+include_directories(
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/core
+    ${CMAKE_SOURCE_DIR}/include/database
+    ${CMAKE_SOURCE_DIR}/include/http
+    ${CMAKE_SOURCE_DIR}/include/handlers
+    ${CMAKE_SOURCE_DIR}/include/utility
+    ${CMAKE_SOURCE_DIR}/include/middleware
+)
 
-include_directories(${CMAKE_SOURCE_DIR}/include/core)
-# List the .cpp files that need to be compiled
 set(SOURCES
     ${CMAKE_SOURCE_DIR}/src/main.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/server.cpp 
-    ${CMAKE_SOURCE_DIR}/src/core/thread_pool.cpp  
+    ${CMAKE_SOURCE_DIR}/src/utility/util.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/thread_pool.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/connection_pool.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/server.cpp
+    ${CMAKE_SOURCE_DIR}/src/database/database.cpp
+    ${CMAKE_SOURCE_DIR}/src/http/http_request.cpp
+    ${CMAKE_SOURCE_DIR}/src/http/http_response.cpp
+    ${CMAKE_SOURCE_DIR}/src/http/http_parser.cpp
+    ${CMAKE_SOURCE_DIR}/src/http/multipart_parser.cpp
+    ${CMAKE_SOURCE_DIR}/src/http/router.cpp
+    ${CMAKE_SOURCE_DIR}/src/middleware/auth.cpp
+    ${CMAKE_SOURCE_DIR}/src/handlers/get_register_handler.cpp
+    ${CMAKE_SOURCE_DIR}/src/handlers/post_register_handler.cpp
+    ${CMAKE_SOURCE_DIR}/src/handlers/get_login_handler.cpp
+    ${CMAKE_SOURCE_DIR}/src/handlers/post_login_handler.cpp
+    ${CMAKE_SOURCE_DIR}/src/handlers/get_home_handler.cpp
+    ${CMAKE_SOURCE_DIR}/src/handlers/post_home_handler.cpp
+    ${CMAKE_SOURCE_DIR}/src/handlers/post_logout_handler.cpp
+    ${CMAKE_SOURCE_DIR}/src/handlers/get_download_handler.cpp
+    ${CMAKE_SOURCE_DIR}/src/handlers/get_history_handler.cpp
 )
 
 add_executable(HttpServer ${SOURCES})
+
+find_package(Threads REQUIRED)
+find_package(PostgreSQL REQUIRED)
+
+if(PostgreSQL_FOUND)
+    target_include_directories(HttpServer PRIVATE ${PostgreSQL_INCLUDE_DIRS})
+    target_link_libraries(HttpServer PRIVATE ${PostgreSQL_LIBRARIES} Threads::Threads)
+else()
+    message(FATAL_ERROR "PostgreSQL NOT found. Please install libpq-dev.")
+endif()
 
 set_target_properties(HttpServer PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build"
