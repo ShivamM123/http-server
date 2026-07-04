@@ -60,6 +60,11 @@ HttpRequest HttpParser::parse(const string& raw_request) {
     }
     request.set_body(body);
 
+    // If it's a POST request from a form, the variables are in the body
+    if (request.get_method() == "POST") {
+        parse_query_params(body, request);
+    }
+
     return request;
 }
 
