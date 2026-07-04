@@ -9,7 +9,9 @@ void HttpRequest::set_body(const string& b) { body = b; }
 void HttpRequest::set_file(const UploadedFile& f) { file = f; }
 
 void HttpRequest::add_header(const string& key, const string& value) {
-    headers[key] = value;
+    string lower_key = key;
+    for (char& c : lower_key) c = tolower(c);
+    headers[lower_key] = value;
 }
 
 void HttpRequest::add_query_param(const string& key, const string& value) {
@@ -23,7 +25,9 @@ string HttpRequest::get_body() const { return body; }
 UploadedFile HttpRequest::get_file() const { return file; }
 
 string HttpRequest::get_header(const string& key) const {
-    auto it = headers.find(key);
+    string lower_key = key;
+    for (char& c : lower_key) c = tolower(c);
+    auto it = headers.find(lower_key);
     if (it != headers.end()) {
         return it->second;
     }

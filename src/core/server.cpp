@@ -178,5 +178,9 @@ void Server::register_routes() {
     router.add_route("POST", "/login", PostLoginHandler::handle);
     
     router.add_route("GET", "/home", GetHomeHandler::handle);
+    router.add_route("POST", "/home", PostHomeHandler::handle);
     router.add_route("POST", "/logout", PostLogoutHandler::handle);
+    
+    router.add_route("GET", "/download", GetDownloadHandler::handle);
+    router.add_route("GET", "/history", GetHistoryHandler::handle);
 }
