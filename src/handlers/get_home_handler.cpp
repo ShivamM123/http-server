@@ -41,7 +41,7 @@ HttpResponse GetHomeHandler::handle(const HttpRequest& req, Database& db) {
         "<hr>"
         "<h3>Download a File</h3>"
         "<form method='GET' action='/download'>"
-        "<input type='text' name='filename' placeholder='Filename (e.g. data.txt)' required><br>"
+        "<input type='text' name='file' placeholder='Filename (e.g. image.png, data.txt)' required><br>"
         "<input type='submit' value='Download File'>"
         "</form>"
         "<hr>"

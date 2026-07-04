@@ -1,0 +1,939 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stacks & Queues — From Zero to Competitive Programming</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #21262d;
+    --bg4: #2d333b;
+    --border: #30363d;
+    --border2: #444c56;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --text3: #6e7681;
+    --accent: #58a6ff;
+    --accent2: #1f6feb;
+    --green: #3fb950;
+    --green2: #0d4429;
+    --orange: #f0883e;
+    --orange2: #3d1f00;
+    --red: #f85149;
+    --red2: #3d0a0a;
+    --purple: #bc8cff;
+    --purple2: #2a1a4a;
+    --teal: #39d353;
+    --yellow: #e3b341;
+    --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+
+  /* SIDEBAR */
+  #sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 260px;
+    height: 100vh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    z-index: 100;
+    padding: 0 0 2rem;
+  }
+
+  #sidebar::-webkit-scrollbar { width: 4px; }
+  #sidebar::-webkit-scrollbar-track { background: transparent; }
+  #sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .sidebar-logo {
+    padding: 1.25rem 1.25rem 1rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+  }
+
+  .sidebar-logo h1 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .sidebar-logo p {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+
+  .nav-section {
+    padding: 0.5rem 0;
+  }
+
+  .nav-section-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.4rem 1.25rem;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.3rem 1.25rem;
+    font-size: 13px;
+    color: var(--text2);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: all 0.1s;
+  }
+
+  .nav-link:hover { color: var(--text); background: var(--bg3); }
+  .nav-link.active { color: var(--accent); border-left-color: var(--accent); background: rgba(88,166,255,0.06); }
+
+  .nav-link .diff {
+    margin-left: auto;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+  .diff-easy { background: #0d4429; color: #3fb950; }
+  .diff-medium { background: #3d2600; color: #f0883e; }
+  .diff-hard { background: #3d0a0a; color: #f85149; }
+  .diff-cf { background: #1e2a45; color: #58a6ff; }
+
+  /* MAIN */
+  #main {
+    margin-left: 260px;
+    min-height: 100vh;
+  }
+
+  .section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 3rem 2.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section:last-child { border-bottom: none; }
+
+  /* HERO */
+  #hero {
+    background: linear-gradient(180deg, #0d1117 0%, #0d1117 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 4rem 2.5rem 3rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-badge span { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; }
+
+  #hero h1 {
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+  }
+
+  #hero h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  #hero p {
+    font-size: 17px;
+    color: var(--text2);
+    max-width: 600px;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .hero-stat {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hero-stat .num {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    font-family: var(--mono);
+    letter-spacing: -0.02em;
+  }
+
+  .hero-stat .label { font-size: 12px; color: var(--text3); }
+
+  /* TYPOGRAPHY */
+  h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  h2 .section-num {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text3);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    white-space: nowrap;
+  }
+
+  h3 {
+    font-size: 17px;
+    font-weight: 600;
+    margin: 2rem 0 0.75rem;
+    color: var(--text);
+  }
+
+  h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 1.5rem 0 0.5rem;
+  }
+
+  p { margin-bottom: 0.9rem; color: var(--text2); }
+  p:last-child { margin-bottom: 0; }
+  strong { color: var(--text); font-weight: 600; }
+
+  /* CODE */
+  pre {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.65;
+    margin: 1rem 0;
+  }
+
+  pre::-webkit-scrollbar { height: 4px; }
+  pre::-webkit-scrollbar-track { background: transparent; }
+  pre::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  code {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  /* Syntax highlighting classes */
+  .kw { color: #ff7b72; }
+  .fn { color: #d2a8ff; }
+  .str { color: #a5d6ff; }
+  .num { color: #f2cc60; }
+  .cmt { color: #6e7681; font-style: italic; }
+  .type { color: #ffa657; }
+  .op { color: #79c0ff; }
+  .var { color: #e6edf3; }
+  .macro { color: #b5cea8; }
+
+  /* CALLOUT BOXES */
+  .callout {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0;
+    border-left: 3px solid;
+    position: relative;
+  }
+
+  .callout-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.4rem;
+  }
+
+  .callout p { margin: 0; font-size: 14px; }
+
+  .callout-insight { background: rgba(88,166,255,0.07); border-color: var(--accent2); }
+  .callout-insight .callout-title { color: var(--accent); }
+  .callout-insight p { color: var(--text2); }
+
+  .callout-warning { background: rgba(240,136,62,0.07); border-color: var(--orange); }
+  .callout-warning .callout-title { color: var(--orange); }
+  .callout-warning p { color: var(--text2); }
+
+  .callout-tip { background: rgba(63,185,80,0.07); border-color: var(--green); }
+  .callout-tip .callout-title { color: var(--green); }
+  .callout-tip p { color: var(--text2); }
+
+  .callout-hard { background: rgba(248,81,73,0.07); border-color: var(--red); }
+  .callout-hard .callout-title { color: var(--red); }
+  .callout-hard p { color: var(--text2); }
+
+  /* PROBLEM CARDS */
+  .problem-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin: 2rem 0;
+    overflow: hidden;
+  }
+
+  .problem-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .problem-num {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text3);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .problem-title-wrap { flex: 1; }
+
+  .problem-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .problem-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  .badge-easy { background: #0d4429; color: #3fb950; }
+  .badge-medium { background: #3d2600; color: #f0883e; }
+  .badge-hard { background: #3d0a0a; color: #f85149; }
+  .badge-cf { background: #1e2a45; color: #79c0ff; }
+  .badge-pattern { background: var(--bg4); color: var(--text2); border: 1px solid var(--border2); }
+
+  .problem-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--accent);
+    text-decoration: none;
+    padding: 2px 8px;
+    border: 1px solid var(--accent2);
+    border-radius: 4px;
+    transition: background 0.1s;
+  }
+
+  .problem-link:hover { background: rgba(88,166,255,0.1); }
+
+  .problem-body {
+    padding: 1.5rem;
+  }
+
+  .problem-body > * + * { margin-top: 1rem; }
+
+  .think-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+  }
+
+  .think-box-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .think-title-intuition { color: var(--purple); }
+  .think-title-approach { color: var(--accent); }
+  .think-title-complexity { color: var(--yellow); }
+  .think-title-visual { color: var(--teal); }
+  .think-title-pattern { color: var(--orange); }
+
+  .think-box p { font-size: 14px; margin-bottom: 0.5rem; }
+  .think-box p:last-child { margin-bottom: 0; }
+  .think-box ul { margin-left: 1.2rem; color: var(--text2); font-size: 14px; }
+  .think-box li { margin-bottom: 0.3rem; }
+
+  /* VISUAL TRACE */
+  .trace {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    overflow-x: auto;
+    color: var(--text2);
+    line-height: 1.8;
+  }
+
+  .trace .arrow { color: var(--accent); }
+  .trace .stack-val { color: var(--green); }
+  .trace .queue-val { color: var(--purple); }
+  .trace .highlight { color: var(--yellow); font-weight: bold; }
+  .trace .push-op { color: var(--green); }
+  .trace .pop-op { color: var(--red); }
+
+  /* PATTERN TABLE */
+  .pattern-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+    margin: 1.25rem 0;
+  }
+
+  .pattern-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+
+  .pattern-card h4 {
+    margin: 0 0 0.5rem;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .pattern-card p {
+    font-size: 13px;
+    color: var(--text2);
+    margin: 0;
+  }
+
+  .pattern-card .tag-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+
+  .tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    background: var(--bg4);
+    color: var(--text2);
+    border: 1px solid var(--border2);
+  }
+
+  /* COMPLEXITY TABLE */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 1rem 0;
+  }
+
+  th {
+    background: var(--bg3);
+    color: var(--text2);
+    font-weight: 600;
+    text-align: left;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  td {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+  td code { font-size: 12px; }
+
+  /* SECTION DIVIDER */
+  .big-divider {
+    padding: 2rem 2.5rem 1rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .big-divider-inner {
+    border-top: 1px solid var(--border);
+    padding-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+
+  .big-divider-inner::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* SCROLL TO TOP */
+  #top-btn {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  #top-btn.visible { opacity: 1; }
+  #top-btn:hover { background: var(--bg4); color: var(--text); }
+
+  /* Progress bar */
+  #progress-bar {
+    position: fixed;
+    top: 0;
+    left: 260px;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #58a6ff, #bc8cff);
+    transform-origin: left;
+    transform: scaleX(0);
+    z-index: 300;
+    transition: transform 0.1s;
+  }
+
+  /* Expandable code sections */
+  .collapsible-header {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin: 0.75rem 0 0;
+    font-size: 13px;
+    color: var(--text2);
+    user-select: none;
+  }
+
+  .collapsible-header:hover { background: var(--bg4); color: var(--text); }
+
+  .collapsible-header .chevron {
+    transition: transform 0.2s;
+    font-size: 10px;
+  }
+
+  .collapsible-header.open .chevron { transform: rotate(180deg); }
+
+  .collapsible-body {
+    display: none;
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    overflow: hidden;
+  }
+
+  .collapsible-body.open { display: block; }
+
+  .collapsible-body pre {
+    border: none;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  /* Problem groups */
+  .problem-group-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 1.25rem 0 0.75rem;
+    border-top: 1px solid var(--border);
+    margin-top: 2.5rem;
+  }
+
+  .problem-group-header:first-child {
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  .group-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .group-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .group-subtitle {
+    font-size: 13px;
+    color: var(--text3);
+  }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <h1>Stack & Queue Mastery</h1>
+    <p>C++ · LeetCode · Codeforces</p>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Foundations</div>
+    <a class="nav-link" href="#hero">Overview</a>
+    <a class="nav-link" href="#sec-mental-model">The Mental Model</a>
+    <a class="nav-link" href="#sec-patterns">Core Patterns</a>
+    <a class="nav-link" href="#sec-cpp">C++ Implementation</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Stack Problems</div>
+    <a class="nav-link" href="#p1">P1 · Valid Parentheses <span class="diff diff-easy">Easy</span></a>
+    <a class="nav-link" href="#p2">P2 · Min Stack <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p3">P3 · Daily Temperatures <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p4">P4 · Next Greater Element I <span class="diff diff-easy">Easy</span></a>
+    <a class="nav-link" href="#p5">P5 · Next Greater Element II <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p6">P6 · Largest Rectangle Histogram <span class="diff diff-hard">Hard</span></a>
+    <a class="nav-link" href="#p7">P7 · Trapping Rain Water <span class="diff diff-hard">Hard</span></a>
+    <a class="nav-link" href="#p8">P8 · Basic Calculator <span class="diff diff-hard">Hard</span></a>
+    <a class="nav-link" href="#p9">P9 · Remove Duplicate Letters <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p10">P10 · Asteroid Collision <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p11">P11 · Score of Parentheses <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p12">P12 · 132 Pattern <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p13">P13 · Maximum Width Ramp <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p14">P14 · Sum of Subarray Minimums <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p15">P15 · Remove K Digits <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p16">P16 · Online Stock Span <span class="diff diff-medium">Med</span></a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Queue Problems</div>
+    <a class="nav-link" href="#p17">P17 · Sliding Window Max <span class="diff diff-hard">Hard</span></a>
+    <a class="nav-link" href="#p18">P18 · First Negative in Window <span class="diff diff-cf">CF</span></a>
+    <a class="nav-link" href="#p19">P19 · Rotten Oranges <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p20">P20 · Task Scheduler <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p21">P21 · Design Hit Counter <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p22">P22 · Implement Stack w/ Queues <span class="diff diff-easy">Easy</span></a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Monotonic Stack</div>
+    <a class="nav-link" href="#p23">P23 · Buildings with Ocean View <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p24">P24 · Maximum Binary Tree <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p25">P25 · Car Fleet <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p26">P26 · Maximal Rectangle <span class="diff diff-hard">Hard</span></a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Competitive — CF</div>
+    <a class="nav-link" href="#p27">P27 · Stack Sorting <span class="diff diff-cf">CF</span></a>
+    <a class="nav-link" href="#p28">P28 · Maximum on Segment <span class="diff diff-cf">1400</span></a>
+    <a class="nav-link" href="#p29">P29 · Strange Printer <span class="diff diff-hard">Hard</span></a>
+    <a class="nav-link" href="#p30">P30 · Expression Evaluation <span class="diff diff-cf">CF</span></a>
+    <a class="nav-link" href="#p31">P31 · Game on Graph (BFS) <span class="diff diff-cf">1600</span></a>
+    <a class="nav-link" href="#p32">P32 · Subarray Ranges <span class="diff diff-medium">Med</span></a>
+    <a class="nav-link" href="#p33">P33 · Largest Rect — Optimized <span class="diff diff-hard">Hard</span></a>
+    <a class="nav-link" href="#p34">P34 · Minimum Cost Tree <span class="diff diff-hard">Hard</span></a>
+    <a class="nav-link" href="#p35">P35 · Number of Visible People <span class="diff diff-hard">Hard</span></a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Strategy</div>
+    <a class="nav-link" href="#sec-strategy">Solving Unknown Problems</a>
+    <a class="nav-link" href="#sec-cheatsheet">Quick Cheatsheet</a>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main id="main">
+
+<!-- HERO -->
+<div id="hero">
+  <div class="hero-badge"><span></span> C++ · LeetCode · Codeforces</div>
+  <h1>Stacks &amp; Queues<br><em>From Zero to 1800+ CF</em></h1>
+  <p>A complete guide for competitive programmers who want to solve LeetCode Hard and Codeforces rated 1600+ problems with deep, intuitive understanding — not memorization.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><span class="num">35+</span><span class="label">Problems covered</span></div>
+    <div class="hero-stat"><span class="num">8</span><span class="label">Core patterns</span></div>
+    <div class="hero-stat"><span class="num">0→1800</span><span class="label">CF rating path</span></div>
+    <div class="hero-stat"><span class="num">C++</span><span class="label">Language used</span></div>
+  </div>
+</div>
+
+<!-- SECTION 1: MENTAL MODEL -->
+<div class="section" id="sec-mental-model">
+  <h2><span class="section-num">01</span> The Mental Model — What ARE these structures?</h2>
+
+  <p>Before writing a single line of code, you need to <strong>feel</strong> what a stack and a queue are. Once you feel them, you'll see them everywhere.</p>
+
+  <h3>The Stack — Last In, First Out (LIFO)</h3>
+  <p>Imagine a stack of plates on a table. You put a plate on top. You take from the top. You <strong>never</strong> reach into the middle. The last plate you put down is the first one you pick up.</p>
+
+  <div class="callout callout-insight">
+    <div class="callout-title">🔑 Core Insight</div>
+    <p>A stack is useful whenever the <strong>most recent thing</strong> matters most, or whenever you need to <strong>undo/reverse</strong> something. Think: browser back button, function call stack, parenthesis matching.</p>
+  </div>
+
+  <p>Real-world stacks you already use without knowing:</p>
+
+  <div class="trace">
+void funcA() { funcB(); }   <span class="cmt">// funcA is on the call stack</span>
+void funcB() { funcC(); }   <span class="cmt">// funcB pushed ON TOP of funcA</span>
+void funcC() { ... }        <span class="cmt">// funcC pushed ON TOP of funcB</span>
+
+<span class="cmt">// Return order: funcC → funcB → funcA (LIFO!)</span>
+  </div>
+
+  <h3>The Queue — First In, First Out (FIFO)</h3>
+  <p>Imagine people standing in line at a ticket counter. The first person who arrived gets served first. New arrivals join at the back. Nobody cuts in line.</p>
+
+  <div class="callout callout-insight">
+    <div class="callout-title">🔑 Core Insight</div>
+    <p>A queue is useful when you need to <strong>process things in the order they arrived</strong>. Think: BFS traversal, print queues, task scheduling, sliding windows.</p>
+  </div>
+
+  <h3>When to immediately think "Stack" vs "Queue"?</h3>
+
+  <div class="pattern-grid">
+    <div class="pattern-card">
+      <h4>🥞 Stack Triggers</h4>
+      <p>You see these words/patterns in the problem:</p>
+      <div class="tag-row">
+        <span class="tag">matching pairs</span>
+        <span class="tag">nested structure</span>
+        <span class="tag">undo operation</span>
+        <span class="tag">previous greater/smaller</span>
+        <span class="tag">evaluate expression</span>
+        <span class="tag">next greater element</span>
+        <span class="tag">monotone</span>
+        <span class="tag">histogram</span>
+      </div>
+    </div>
+    <div class="pattern-card">
+      <h4>🚶 Queue Triggers</h4>
+      <p>You see these words/patterns in the problem:</p>
+      <div class="tag-row">
+        <span class="tag">level order</span>
+        <span class="tag">BFS / shortest path</span>
+        <span class="tag">sliding window</span>
+        <span class="tag">process in order</span>
+        <span class="tag">k elements at a time</span>
+        <span class="tag">first occurrence</span>
+        <span class="tag">scheduling</span>
+        <span class="tag">rotting / spreading</span>
+      </div>
+    </div>
+  </div>
+
+  <h3>Why does this matter for competitive programming?</h3>
+  <p>In CP, you rarely get told "use a stack". You get a problem like <em>"find the maximum of all subarrays of size k"</em> or <em>"find the sum of minimums of all subarrays"</em>. Your job is to recognize the underlying pattern. This guide is about building that pattern recognition.</p>
+</div>
+
+<!-- SECTION 2: PATTERNS -->
+<div class="section" id="sec-patterns">
+  <h2><span class="section-num">02</span> The 8 Core Patterns</h2>
+  <p>Every stack/queue problem you'll ever see fits into one (or a combination) of these patterns. Learn these, and you'll be able to tackle any problem.</p>
+
+  <h3>Pattern 1: Matching / Balancing</h3>
+  <p><strong>Recognize it:</strong> The problem involves pairs — parentheses, brackets, braces, tags. You need to check they are correctly nested or find unmatched ones.</p>
+  <p><strong>Core idea:</strong> Push opening symbols. When you see a closing symbol, check if it matches the top of the stack and pop.</p>
+
+  <h3>Pattern 2: Monotonic Stack (KING of hard problems)</h3>
+  <p><strong>Recognize it:</strong> Questions about <em>next greater element</em>, <em>previous smaller element</em>, <em>largest rectangle</em>, <em>trapped water</em>, <em>subarray min/max</em>. Anything where for each element you want to quickly find the nearest element that is greater or smaller.</p>
+  <p><strong>Core idea:</strong> Maintain a stack where elements are always in sorted order (either always increasing or always decreasing). When an element breaks the monotonicity, elements are popped — and the moment of popping gives you the answer for the popped element.</p>
+
+  <div class="callout callout-warning">
+    <div class="callout-title">⚡ This is the most important pattern</div>
+    <p>Almost every LeetCode Hard stack problem and every 1600+ CF stack problem uses a monotonic stack. Master this pattern first.</p>
+  </div>
+
+  <h3>Pattern 3: Stack for Expression Evaluation</h3>
+  <p><strong>Recognize it:</strong> Evaluate mathematical or logical expressions. Operators and operands. Possibly with parentheses.</p>
+  <p><strong>Core idea:</strong> Use two stacks — one for numbers, one for operators. When you see a closing paren or a lower-precedence operator, pop and evaluate.</p>
+
+  <h3>Pattern 4: Simulation / State Machine with Stack</h3>
+  <p><strong>Recognize it:</strong> You're simulating a process where events happen and cancel each other — asteroids colliding, undo operations, nested directories.</p>
+  <p><strong>Core idea:</strong> The stack represents the current state. Each element decides whether to cancel/modify the top of the stack or get pushed.</p>
+
+  <h3>Pattern 5: Monotonic Queue (Deque)</h3>
+  <p><strong>Recognize it:</strong> Sliding window maximum/minimum. You have a window of size k moving over an array and you need the max or min in O(1) per step.</p>
+  <p><strong>Core idea:</strong> Use a deque. Maintain elements in decreasing order (for max) or increasing order (for min). Elements outside the window get removed from the front. Useless elements get removed from the back.</p>
+
+  <h3>Pattern 6: BFS with Queue</h3>
+  <p><strong>Recognize it:</strong> Shortest path in unweighted graph. Level-order traversal. Spreading (like rot, fire, infection). "Minimum steps to reach..."</p>
+  <p><strong>Core idea:</strong> Start with initial states in the queue. For each state, generate next states and push to queue if not visited. The first time you reach a target, that's the minimum distance.</p>
+
+  <h3>Pattern 7: Stack-Based Greedy</h3>
+  <p><strong>Recognize it:</strong> Remove elements to get the lexicographically smallest result, or remove k elements to maximize something.</p>
+  <p><strong>Core idea:</strong> Greedily build the answer using a stack. When adding a new element, remove elements from the stack that are worse than the current element (if you still have budget to remove).</p>
+
+  <h3>Pattern 8: Prefix/Suffix with Stack</h3>
+  <p><strong>Recognize it:</strong> You need to precompute information about "what is to the left/right of each element" — like previous smaller element arrays used in range queries.</p>
+  <p><strong>Core idea:</strong> Run the monotonic stack twice — once left-to-right and once right-to-left — to build prefix and suffix arrays, then combine.</p>
+</div>
+
+<!-- SECTION 3: C++ IMPLEMENTATION -->
+<div class="section" id="sec-cpp">
+  <h2><span class="section-num">03</span> C++ — Everything You Need</h2>
+
+  <h3>Stack — <code>std::stack</code></h3>
+
+  <pre><code><span class="macro">#include</span> <span class="str">&lt;stack&gt;</span>
+<span class="macro">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="type">int</span> <span class="fn">main</span>() {
+    stack&lt;<span class="type">int</span>&gt; st;
+
+    st.<span class="fn">push</span>(<span class="num">10</span>);   <span class="cmt">// push to top</span>
+    st.<span class="fn">push</span>(<span class="num">20</span>);
+    st.<span class="fn">push</span>(<span class="num">30</span>);
+
+    cout &lt;&lt; st.<span class="fn">top</span>();  <span class="cmt">// 30 — peek top without removing</span>
+    st.<span class="fn">pop</span>();         <span class="cmt">// remove top (returns void!)</span>
+    cout &lt;&lt; st.<span class="fn">top</span>();  <span class="cmt">// 20 now</span>
+    cout &lt;&lt; st.<span class="fn">size</span>(); <span class="cmt">// 2</span>
+    cout &lt;&lt; st.<span class="fn">empty</span>(); <span class="cmt">// false</span>
+
+    <span class="cmt">// CRITICAL: Always check empty() before top() or pop()</span>
+    <span class="kw">while</span> (!st.<span class="fn">empty</span>()) {
+        cout &lt;&lt; st.<span class="fn">top</span>() &lt;&lt; <span class="str">" "</span>;
+        st.<span class="fn">pop</span>();
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <div class="callout callout-warning">
+    <div class="callout-title">⚠ Common Bug</div>
+    <p><code>pop()</code> in C++ returns <code>void</code>. You cannot do <code>int x = st.pop()</code>. You must do <code>int x = st.top(); st.pop();</code> to get the value and remove it. This trips up almost everyone.</p>
+  </div>
+
+  <h3>Queue — <code>std::queue</code></h3>
+
+  <pre><code><span class="macro">#include</span> <span class="str">&lt;queue&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="type">int</span> <span class="fn">main</span>() {
+    queue&lt;<span class="type">int</span>&gt; q;
+
+    q.<span class="fn">push</span>(<span class="num">10</span>);    <span class="cmt">// enqueue at back</span>
+    q.<span class="fn">push</span>(<span class="num">20</span>);
+    q.<span class="fn">push</span>(<span class="num">30</span>);
