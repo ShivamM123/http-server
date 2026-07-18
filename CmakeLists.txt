@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(HttpServer VERSION 1.0)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 include_directories(
@@ -18,6 +18,7 @@ include_directories(
 set(SOURCES
     ${CMAKE_SOURCE_DIR}/src/main.cpp
     ${CMAKE_SOURCE_DIR}/src/utility/util.cpp
+    ${CMAKE_SOURCE_DIR}/src/utility/crypto_util.cpp
     ${CMAKE_SOURCE_DIR}/src/core/thread_pool.cpp
     ${CMAKE_SOURCE_DIR}/src/core/connection_pool.cpp
     ${CMAKE_SOURCE_DIR}/src/core/server.cpp
@@ -43,10 +44,11 @@ add_executable(HttpServer ${SOURCES})
 
 find_package(Threads REQUIRED)
 find_package(PostgreSQL REQUIRED)
+find_package(OpenSSL REQUIRED)
 
-if(PostgreSQL_FOUND)
-    target_include_directories(HttpServer PRIVATE ${PostgreSQL_INCLUDE_DIRS})
-    target_link_libraries(HttpServer PRIVATE ${PostgreSQL_LIBRARIES} Threads::Threads)
+if(PostgreSQL_FOUND AND OPENSSL_FOUND)
+    target_include_directories(HttpServer PRIVATE ${PostgreSQL_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR})
+    target_link_libraries(HttpServer PRIVATE ${PostgreSQL_LIBRARIES} Threads::Threads OpenSSL::SSL OpenSSL::Crypto)
 else()
     message(FATAL_ERROR "PostgreSQL NOT found. Please install libpq-dev.")
 endif()

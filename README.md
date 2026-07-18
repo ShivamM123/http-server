@@ -1,23 +1,22 @@
-# C++ Custom HTTP Server
+# Multithreaded HTTP File Transfer Server
 
-A high-performance, custom-built HTTP server written entirely in C++ from scratch. This project implements its own HTTP parsing, routing, and request/response handling without relying on external web frameworks. 
+A high-performance, custom-built HTTP server written entirely in C++17 from scratch. This project implements its own HTTP parsing, routing, and request/response handling without relying on external web frameworks. 
 
 ## Features
 
-- **Custom HTTP & Multipart Parsing**: Built-in HTTP request parsing with support for query parameters, headers, cookies, and `multipart/form-data` file uploads.
-- **Thread Pool Architecture**: Efficient request handling using a custom thread pool.
-- **PostgreSQL Connection Pool**: A robust, thread-safe database connection pool for handling multiple concurrent queries safely.
-- **Authentication System**: Secure user registration, login, and session management using tokens and cookies.
-- **File Management**: Upload, download, compress, and delete files securely.
-- **Action History**: Tracks user actions automatically in the database.
+- Developed a high-performance network file server utilizing C++17 and native POSIX Sockets for concurrent client request operations.
+- Integrated a memory-optimized HTTP parser configured for multipart/form-data to stabilize binary payloads during heavy file processing.
+- Secured user endpoints by deploying OpenSSL cryptographic validations to mitigate unauthorized route access exploits.
+- Constructed a download routing system mapped to access privileges, managed by a PostgreSQL persistent database backend.
 
 ## Prerequisites
 
 - **WSL (Ubuntu/Debian)** or Native Linux environment
 - **CMake** (v3.10+)
-- **C++20** compatible compiler (GCC/Clang)
+- **C++17** compatible compiler (GCC/Clang)
 - **PostgreSQL** server running locally (`username: postgres`)
 - **libpq-dev** installed (`sudo apt-get install libpq-dev`)
+- **libssl-dev** installed (`sudo apt-get install libssl-dev`)
 
 ## Database Setup
 

@@ -1,6 +1,7 @@
 #include "post_login_handler.h"
 #include <vector>
 #include <libpq-fe.h> // For PQntuples and PQgetvalue
+#include "crypto_util.h"
 
 using namespace std;
 
@@ -18,14 +19,15 @@ HttpResponse PostLoginHandler::handle(const HttpRequest& req, Database& db) {
     }
 
     try {
-        vector<string> params = {username, password};
+        string hashed_password = CryptoUtil::hash_password(password);
+        vector<string> params = {username, hashed_password};
         // Queries the database to find a matching user
         auto db_res = db.execute_query("SELECT id FROM users WHERE username = $1 AND password_hash = $2", params);
         
         if (PQntuples(db_res.get()) > 0) {
-            // Success: User found. Create a rudimentary session token.
+            // Success: User found. Create a cryptographically signed session token.
             string user_id = PQgetvalue(db_res.get(), 0, 0);
-            string session_token = "user_" + user_id + "_auth_token";
+            string session_token = CryptoUtil::generate_session_token(user_id);
             
             res.set_status(302, "Found");
             res.add_header("Location", "/home");

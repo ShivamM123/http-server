@@ -1,5 +1,6 @@
 #include "post_register_handler.h"
 #include <vector>
+#include "crypto_util.h"
 
 using namespace std;
 
@@ -17,7 +18,8 @@ HttpResponse PostRegisterHandler::handle(const HttpRequest& req, Database& db) {
     }
 
     try {
-        vector<string> params = {username, password};
+        string hashed_password = CryptoUtil::hash_password(password);
+        vector<string> params = {username, hashed_password};
         // Secure execution using parameterized query to prevent SQL Injection
         auto db_res = db.execute_query("INSERT INTO users (username, password_hash) VALUES ($1, $2)", params);
         

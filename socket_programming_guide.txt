@@ -1,0 +1,163 @@
+================================================================================
+          SOCKET PROGRAMMING PREREQUISITES & CONCEPTS (EASY GUIDE)
+================================================================================
+
+In Linux/Unix systems (and by extension in C/C++ networking), EVERYTHING is
+treated as a "file". Your keyboard is a file, your screen is a file, and your
+network connection is a file. When you open any of these, the OS gives you a
+number called a "File Descriptor" (FD).
+
+A Socket is just a File Descriptor used for network communication.
+
+Here are the key concepts and functions used in this HTTP server:
+
+--------------------------------------------------------------------------------
+1. SOCKETS, PORTS, AND BINDING
+--------------------------------------------------------------------------------
+Think of your computer as a large apartment building.
+- IP Address = The street address of the building.
+- Port = The specific apartment number inside the building (e.g., Port 80).
+- Socket = The mailbox of that specific apartment.
+
+Functions used:
+- getaddrinfo(): Looks up the address (like checking the phonebook). It helps
+                 set up the structures needed for the network.
+- socket(): Asks the Operating System to create a new "mailbox" (returns an FD).
+- setsockopt(): Configures the mailbox (e.g., SO_REUSEADDR allows you to restart
+                your server immediately without waiting for the port to clear).
+- bind(): Officially attaches your new socket to the specific Port (apartment).
+- listen(): Tells the OS, "I am a server, start listening for people knocking on
+            my door."
+
+Basic Structure:
+```cpp
+int server_socket = socket(AF_INET, SOCK_STREAM, 0); // Create mailbox
+bind(server_socket, ...);                            // Attach to Port 8080
+listen(server_socket, 10);                           // Listen (queue up to 10 people)
+```
+
+--------------------------------------------------------------------------------
+2. ACCEPTING, RECEIVING, AND SENDING
+--------------------------------------------------------------------------------
+Once your server is listening, it waits for a client (a web browser) to connect.
+
+- accept(): This function PAUSES your program until someone connects. When a
+            client connects, accept() returns a brand NEW socket (File Descriptor)
+            specifically dedicated to talking to that one client. The original
+            server_socket keeps listening for new people.
+- recv(): Reads the data (the HTTP request) sent by the client.
+- send(): Sends data (the HTTP response) back to the client.
+- close(): Hangs up the phone (destroys the socket).
+
+Basic Structure:
+```cpp
+int client_socket = accept(server_socket, ...); // Wait for someone to connect
+char buffer[1024];
+recv(client_socket, buffer, sizeof(buffer), 0); // Read what they said
+send(client_socket, "Hello!", 6, 0);            // Reply back
+close(client_socket);                           // Hang up
+```
+
+--------------------------------------------------------------------------------
+3. PIPES (THE ALARM SYSTEM)
+--------------------------------------------------------------------------------
+A "pipe" is a one-way communication tube inside your own computer. You write data
+into one end of the tube, and read it from the other end.
+
+Why do we need it here? 
+Because our server gets stuck on `accept()`, waiting for a client forever. If we
+want to shut down the server safely (e.g., when you press Ctrl+C), we can't tell
+`accept()` to wake up... unless we trick it using a pipe!
+
+- pipe(pipefd): Creates a tube and gives you 2 File Descriptors:
+                pipefd[0] is the Read end.
+                pipefd[1] is the Write end.
+
+Basic Structure:
+```cpp
+int pipefd[2];
+pipe(pipefd);
+
+// Thread 1 (To trigger shutdown):
+write(pipefd[1], "Q", 1); // Drop a letter 'Q' into the tube
+
+// Thread 2 (The Server):
+// Uses select() to watch BOTH the server_socket and pipefd[0].
+```
+
+--------------------------------------------------------------------------------
+4. SELECT() (MULTIPLEXING)
+--------------------------------------------------------------------------------
+If a receptionist at a hotel has two phones, they can't just pick up one and ignore
+the other. They need a system that rings whenever EITHER phone gets a call.
+
+`select()` is that system. It lets your program watch multiple File Descriptors
+at the same time and pauses until AT LEAST ONE of them is ready to be read.
+
+In our server, we use `select()` to watch:
+1. `server_socket`: Is a new client connecting?
+2. `pipefd[0]`: Did someone press Ctrl+C to shut down the server?
+
+Functions/Macros:
+- fd_set: A "list" or "set" of File Descriptors you want to watch.
+- FD_ZERO(): Clears the list.
+- FD_SET(): Adds a socket/pipe to the list.
+- select(): Pauses the program until one of the items in the list is ready.
+- FD_ISSET(): Checks WHICH socket/pipe actually woke us up.
+
+Basic Structure:
+```cpp
+fd_set watch_list;
+FD_ZERO(&watch_list);
+FD_SET(server_socket, &watch_list); // Watch for clients
+FD_SET(pipefd[0], &watch_list);     // Watch for shutdown signal
+
+// Wait until one of them has activity
+select(max_fd + 1, &watch_list, NULL, NULL, NULL);
+
+if (FD_ISSET(server_socket, &watch_list)) {
+    // A client connected! Call accept()
+}
+if (FD_ISSET(pipefd[0], &watch_list)) {
+    // The pipe has data! It's our shutdown signal! Break the loop.
+}
+```
+
+--------------------------------------------------------------------------------
+5. SIGNAL HANDLING (CTRL+C)
+--------------------------------------------------------------------------------
+When you press Ctrl+C in the terminal, the Operating System sends a "Signal" called
+SIGINT (Signal Interrupt) to your program, which normally kills it instantly.
+
+We want to intercept that signal so we can close our database connections and sockets
+cleanly before dying.
+
+- signal(): Tells the OS, "When you receive SIGINT, don't kill me. Run this specific
+            function instead."
+
+Basic Structure:
+```cpp
+void my_shutdown_function(int signum) {
+    // Send a message through the pipe to wake up select()
+    write(pipefd[1], "Q", 1); 
+}
+
+int main() {
+    signal(SIGINT, my_shutdown_function); // Intercept Ctrl+C
+    // ... run server ...
+}
+```
+
+================================================================================
+PUTTING IT ALL TOGETHER (HOW OUR SERVER WORKS)
+================================================================================
+1. Create a pipe.
+2. Bind a server_socket to Port 8080.
+3. Intercept Ctrl+C with a signal handler.
+4. Loop forever:
+   a. Put server_socket and pipefd[0] into a watch list (fd_set).
+   b. Call select() and go to sleep.
+   c. If we wake up because of pipefd[0], it means Ctrl+C was pressed. Quit loop.
+   d. If we wake up because of server_socket, call accept() to get client_socket.
+   e. Give the client_socket to a Thread Pool to read (recv) and write (send).
+5. Loop ends, close all sockets safely.

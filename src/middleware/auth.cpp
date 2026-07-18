@@ -1,15 +1,16 @@
 #include "auth.h"
+#include "crypto_util.h"
 
 using namespace std;
 
 bool Auth::is_authenticated(const HttpRequest& req) {
-    string cookie_header = req.get_header("Cookie");
-    
-    // Simple verification: checks if a session_token exists in the cookies
-    if (cookie_header.find("session_token=") != string::npos) {
-        return true; 
+    string token = extract_session_token(req);
+    if (token.empty()) {
+        return false;
     }
-    return false;
+    
+    // Verify the signature of the session token
+    return CryptoUtil::verify_token(token);
 }
 
 string Auth::extract_session_token(const HttpRequest& req) {
